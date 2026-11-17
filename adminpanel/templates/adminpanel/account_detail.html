@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Account {{ account.account_number|acct }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="source">Held by <a href="{% url 'adminpanel:user_detail' account.user.pk %}">{{ account.user.get_full_name|default:account.user.username }}</a></span>
+    <h1>{{ account.nickname|default:account.get_account_type_display }}</h1>
+    <p class="num">{{ account.account_number|acct }} · opened {{ account.created_at|date:"j M Y" }}</p></div>
+  <div class="actions">
+    <a class="btn btn-primary" href="{% url 'adminpanel:account_edit' account.pk %}">{% if account.status == "FROZEN" %}Unfreeze or edit{% else %}Freeze or edit{% endif %}</a>
+    <a class="btn btn-ghost" href="{% url 'adminpanel:account_delete' account.pk %}">Close account</a>
+  </div>
+</div>
+
+<div class="grid-2" style="margin-bottom:28px">
+  <div class="notes" style="grid-template-columns:1fr">{% include "banking/_note.html" with a=account href="#statement" %}</div>
+  <div class="card">
+    <h3>Counter deposit or withdrawal</h3>
+    <p class="muted" style="font-size:14px">Records cash handled at the counter. The customer is notified.</p>
+    <form method="post">
+      {% csrf_token %}
+      {{ teller.as_p }}
+      <button type="submit" class="btn-primary">Record it</button>
+    </form>
+  </div>
+</div>
+
+<h2 id="statement">Passbook</h2>
+{% include "banking/_statement.html" with detail_url="adminpanel:transaction_detail" %}
+<a class="back" href="{% url 'adminpanel:account_list' %}">&larr; All accounts</a>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="page-head"><div><h1>{{ title }}</h1>{% if intro %}<p>{{ intro }}</p>{% endif %}</div></div>
+<div class="card form-card">
+  {% include "core/_form_body.html" %}
+</div>
+{% if back_url %}<a class="back" href="{{ back_url }}">&larr; Back</a>{% endif %}
+{% endblock %}
+
+{# signed-out use (register) gets the split auth layout #}
+{% block auth %}
+<div class="auth">
+  <section class="auth-plate" aria-hidden="true">
+    <span class="brand-mark">DigiBank</span>
+    <div>
+      <div class="auth-headline">Open an account in a minute.</div>
+      <p class="auth-sub">You get a savings account as soon as you register. Open more accounts later from your overview.</p>
+    </div>
+    <span class="auth-serial">NO. 000-0-00000-0 &nbsp;·&nbsp; THB</span>
+  </section>
+  <section class="auth-form">
+    <div>
+      {% include "core/_messages.html" %}
+      <h1>{{ title }}</h1>
+      <p class="lead">{{ intro|default:"Fill in your details to create a login." }}</p>
+      {% include "core/_form_body.html" %}
+      {% if back_url %}<p class="auth-switch">Already have a login? <a href="{{ back_url }}">Log in</a></p>{% endif %}
+    </div>
+  </section>
+</div>
+{% endblock %}

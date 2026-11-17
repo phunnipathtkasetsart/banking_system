@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Transactions{% endblock %}
+{% block content %}
+<div class="page-head"><div><span class="source">PostgreSQL · banking_transaction</span><h1>Transactions</h1>
+  <p>Red account numbers sent money, green ones received it.</p></div></div>
+{% include "banking/_txn_table.html" with detail_url="banking:transaction_detail" %}
+{% endblock %}

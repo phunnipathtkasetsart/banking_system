@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}{{ profile.username }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="profile-head" style="margin:0">
+    {% if profile.avatar %}<img class="avatar" src="{{ profile.avatar.url }}" alt="">{% else %}<span class="avatar">{{ profile|initials }}</span>{% endif %}
+    <div><span class="source">{{ profile.get_role_display }} · @{{ profile.username }}</span><h1>{{ profile.get_full_name|default:profile.username }}</h1></div>
+  </div>
+  <div class="actions">
+    <a class="btn btn-primary" href="{% url 'adminpanel:user_edit' profile.pk %}">Edit</a>
+    <form method="post" action="{% url 'adminpanel:user_toggle_active' profile.pk %}">{% csrf_token %}
+      <button type="submit">{% if profile.is_active %}Deactivate{% else %}Activate{% endif %}</button></form>
+    <a class="btn btn-ghost" href="{% url 'activity:admin_list' %}?username={{ profile.username }}">Activity logs</a>
+    <a class="btn btn-ghost" href="{% url 'adminpanel:user_delete' profile.pk %}">Delete</a>
+  </div>
+</div>
+
+<div class="card form-card" style="max-width:none">
+  <dl class="kv">
+    <dt>Email</dt><dd>{{ profile.email }}</dd>
+    <dt>Phone</dt><dd>{{ profile.phone|default:"—" }}</dd>
+    <dt>Status</dt><dd><span class="chip {% if profile.is_active %}chip-active{% else %}chip-closed{% endif %}">{{ profile.is_active|yesno:"Active,Inactive" }}</span></dd>
+    <dt>Joined</dt><dd>{{ profile.date_joined|date:"j M Y, H:i" }}</dd>
+    <dt>Last login</dt><dd>{{ profile.last_login|date:"j M Y, H:i"|default:"Never" }}</dd>
+  </dl>
+</div>
+
+<div class="page-head" style="margin:36px 0 14px"><h2 style="margin:0">Accounts</h2>
+  <a class="btn" href="{% url 'adminpanel:account_create' profile.pk %}">Open an account for this user</a></div>
+<div class="notes">
+  {% for a in accounts %}
+    {% url 'adminpanel:account_detail' a.pk as href %}
+    {% include "banking/_note.html" with a=a href=href %}
+  {% empty %}
+    <p class="muted">No accounts yet.</p>
+  {% endfor %}
+</div>
+
+<h2>Recent transactions</h2>
+{% include "banking/_txn_table.html" with detail_url="adminpanel:transaction_detail" %}
+<a class="back" href="{% url 'adminpanel:user_list' %}">&larr; All users</a>
+{% endblock %}

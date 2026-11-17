@@ -1,0 +1,88 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}DigiBank{% endblock %} · DigiBank</title>
+  <link rel="preload" href="{% static 'fonts/bricolage-grotesque.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body class="{% if user.is_authenticated and user.is_bank_admin %}role-admin{% else %}role-customer{% endif %}">
+{% if user.is_authenticated %}
+<div class="shell">
+  <aside class="sidebar" aria-label="Main navigation">
+    <a class="brand" href="{% url 'core:home' %}">
+      <span class="brand-mark">DigiBank</span>
+      <span class="brand-role">{% if user.is_bank_admin %}Staff{% else %}Personal{% endif %}</span>
+    </a>
+    <nav class="nav-groups">
+    {% if user.is_bank_admin %}
+      <div class="nav-group">
+        <div class="nav-label">Overview</div>
+        <a class="nav-link {% active 'adminpanel:dashboard' %}" href="{% url 'adminpanel:dashboard' %}">Dashboard</a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-label">Manage</div>
+        <a class="nav-link {% active 'adminpanel:user' %}" href="{% url 'adminpanel:user_list' %}">Customers &amp; staff</a>
+        <a class="nav-link {% active 'adminpanel:account' %}" href="{% url 'adminpanel:account_list' %}">Accounts</a>
+        <a class="nav-link {% active 'adminpanel:transaction' %}" href="{% url 'adminpanel:transaction_list' %}">Transactions</a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-label">Monitor</div>
+        <a class="nav-link {% active 'activity:' %}" href="{% url 'activity:admin_list' %}">Activity logs</a>
+        <a class="nav-link {% active 'support:' %}" href="{% url 'support:ticket_list' %}">Support desk</a>
+        <a class="nav-link {% active 'notifications:list' %}" href="{% url 'notifications:list' %}">Notifications</a>
+        <a class="nav-link {% active 'notifications:broadcast' %}" href="{% url 'notifications:broadcast' %}">Broadcast</a>
+      </div>
+    {% else %}
+      <div class="nav-group">
+        <div class="nav-label">Money</div>
+        <a class="nav-link {% active 'banking:dashboard' %}" href="{% url 'banking:dashboard' %}">Overview</a>
+        <a class="nav-link {% active 'banking:account' %}" href="{% url 'banking:account_list' %}">Accounts</a>
+        <a class="nav-link {% active 'banking:transfer' %}" href="{% url 'banking:transfer' %}">Transfer</a>
+        <a class="nav-link {% active 'banking:deposit' %}" href="{% url 'banking:deposit' %}">Deposit</a>
+        <a class="nav-link {% active 'banking:withdraw' %}" href="{% url 'banking:withdraw' %}">Withdraw</a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-label">Records</div>
+        <a class="nav-link {% active 'banking:transaction' %}" href="{% url 'banking:transaction_list' %}">Transactions</a>
+        <a class="nav-link {% active 'banking:beneficiar' %}" href="{% url 'banking:beneficiary_list' %}">Saved payees</a>
+        <a class="nav-link {% active 'banking:draft' %}" href="{% url 'banking:draft_list' %}">Drafts</a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-label">Help</div>
+        <a class="nav-link {% active 'notifications:' %}" href="{% url 'notifications:list' %}">Notifications
+          {% if unread_notifications %}<span class="nav-count">{{ unread_notifications }}</span>{% endif %}</a>
+        <a class="nav-link {% active 'activity:' %}" href="{% url 'activity:my_list' %}">My activity</a>
+        <a class="nav-link {% active 'support:' %}" href="{% url 'support:ticket_list' %}">Support</a>
+      </div>
+    {% endif %}
+    </nav>
+    <div class="sidebar-foot">
+      <form method="post" action="{% url 'users:logout' %}">{% csrf_token %}<button type="submit">Log out</button></form>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      {% if not user.is_bank_admin %}
+        <a class="bell" href="{% url 'notifications:list' %}?unread=1">{% if unread_notifications %}<strong>{{ unread_notifications }}</strong> unread{% else %}No unread{% endif %}</a>
+      {% endif %}
+      <a class="me {% active 'users:' %}" href="{% url 'users:profile' %}">
+        {% if user.avatar %}<img class="avatar" src="{{ user.avatar.url }}" alt="">{% else %}<span class="avatar" aria-hidden="true">{{ user|initials }}</span>{% endif %}
+        <span class="me-name">{{ user.get_full_name|default:user.username }}<span class="me-role">{{ user.get_role_display }}</span></span>
+      </a>
+    </header>
+    <main class="content" id="main">
+      {% include "core/_messages.html" %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% else %}
+  {% block auth %}
+  <main class="content">{% include "core/_messages.html" %}{% block anon_content %}{% endblock %}</main>
+  {% endblock %}
+{% endif %}
+</body>
+</html>

@@ -1,0 +1,14 @@
+{# Account rendered as a banknote plate. Needs: a, href #}
+<a class="note is-{{ a.status|lower }}" href="{{ href }}">
+  <div class="note-top">
+    <div>
+      <div class="note-type">{{ a.get_account_type_display }}</div>
+      <div class="note-name">{{ a.nickname|default:a.get_account_type_display }}</div>
+    </div>
+    {% if a.status != "ACTIVE" %}<span class="chip">{{ a.get_status_display }}</span>{% endif %}
+  </div>
+  <div>
+    <div class="note-bal"><small>฿</small>{{ a.balance|money }}</div>
+    <div class="note-no">{{ a.account_number|acct }}</div>
+  </div>
+</a>

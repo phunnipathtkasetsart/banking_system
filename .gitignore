@@ -1,0 +1,81 @@
+# ---------------------------------------------------------------
+# Secrets & local config  (NEVER commit — use .env.example instead)
+# ---------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+secrets/
+credentials*.json
+docker-compose.override.yml
+
+# ---------------------------------------------------------------
+# User uploads (avatars live on local disk, not in git)
+# ---------------------------------------------------------------
+media/
+
+# ---------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# ---------------------------------------------------------------
+# Django
+# ---------------------------------------------------------------
+# collectstatic output (the source files in static/ ARE committed)
+staticfiles/
+*.sqlite3
+*.log
+local_settings.py
+
+# ---------------------------------------------------------------
+# Database dumps / backups (may contain customer data)
+# ---------------------------------------------------------------
+*.sql
+*.dump
+*.bak
+*.bson
+*.archive
+backups/
+dump/
+
+# ---------------------------------------------------------------
+# Editors & OS
+# ---------------------------------------------------------------
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------------------------------------------------------------
+# Claude Code local settings
+# ---------------------------------------------------------------
+.claude/settings.local.json
+
+# Keep empty placeholder folders
+!docs/screenshots/.gitkeep
+!docs/diagrams/.gitkeep

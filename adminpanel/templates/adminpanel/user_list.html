@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Customers & staff{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="source">PostgreSQL · users_user</span><h1>Customers &amp; staff</h1></div>
+  <a class="btn btn-primary" href="{% url 'adminpanel:user_create' %}">Add a user</a>
+</div>
+<form method="get" class="filters">
+  <div><label for="q">Name, username or email</label><input id="q" name="q" value="{{ q }}" type="search"></div>
+  <div><label for="role">Role</label><select id="role" name="role"><option value="">Any role</option>
+    <option value="CUSTOMER" {% if role == "CUSTOMER" %}selected{% endif %}>Customer</option>
+    <option value="ADMIN" {% if role == "ADMIN" %}selected{% endif %}>Admin</option></select></div>
+  <button type="submit" class="btn-primary">Filter</button>
+</form>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>User</th><th>Email</th><th>Role</th><th class="right">Accounts</th><th>Status</th><th>Joined</th><th></th></tr></thead>
+  <tbody>
+  {% for u in users %}
+  <tr>
+    <td><strong>{{ u.get_full_name|default:u.username }}</strong><br><span class="muted num" style="font-size:12px">@{{ u.username }}</span></td>
+    <td>{{ u.email }}</td>
+    <td><span class="chip {% if u.role == 'ADMIN' %}chip-admin{% endif %}">{{ u.get_role_display }}</span></td>
+    <td class="right num">{{ u.n_accounts }}</td>
+    <td><span class="chip {% if u.is_active %}chip-active{% else %}chip-closed{% endif %}">{{ u.is_active|yesno:"Active,Inactive" }}</span></td>
+    <td>{{ u.date_joined|date:"j M Y" }}</td>
+    <td class="row-actions right"><a href="{% url 'adminpanel:user_detail' u.pk %}">Open</a><a href="{% url 'adminpanel:user_edit' u.pk %}">Edit</a></td>
+  </tr>
+  {% empty %}<tr><td colspan="7" class="empty">No users match these filters.</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

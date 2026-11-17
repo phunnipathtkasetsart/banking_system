@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Transactions{% endblock %}
+{% block content %}
+<div class="page-head"><div><span class="source">PostgreSQL · banking_transaction</span><h1>Transactions</h1>
+  <p>Red account numbers sent money, green ones received it.</p></div></div>
+<form method="get" class="filters">
+  <div><label for="q">Reference or account number</label><input id="q" name="q" value="{{ q }}" type="search"></div>
+  <div><label for="type">Type</label><select id="type" name="type"><option value="">Any type</option>
+    {% for v, label in types %}<option value="{{ v }}" {% if type == v %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+  <div><label for="status">Status</label><select id="status" name="status"><option value="">Any status</option>
+    {% for v, label in statuses %}<option value="{{ v }}" {% if status == v %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+  <button type="submit" class="btn-primary">Filter</button>
+</form>
+{% include "banking/_txn_table.html" with detail_url="adminpanel:transaction_detail" %}
+{% endblock %}

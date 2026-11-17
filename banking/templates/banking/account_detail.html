@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Account {{ account.account_number|acct }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="source">PostgreSQL · banking_transactionentry</span><h1>{{ account.nickname|default:account.get_account_type_display }}</h1>
+    <p class="num">{{ account.account_number|acct }} · opened {{ account.created_at|date:"j M Y" }}</p></div>
+  <div class="actions">
+    {% if account.status == "ACTIVE" %}
+      <a class="btn btn-primary" href="{% url 'banking:transfer' %}">Transfer</a>
+      <a class="btn" href="{% url 'banking:deposit' %}?account={{ account.pk }}">Deposit</a>
+      <a class="btn" href="{% url 'banking:withdraw' %}?account={{ account.pk }}">Withdraw</a>
+    {% endif %}
+    {% if account.status != "CLOSED" %}
+      <a class="btn btn-ghost" href="{% url 'banking:account_edit' account.pk %}">Rename</a>
+      <a class="btn btn-ghost" href="{% url 'banking:account_close' account.pk %}">Close account</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid-2" style="margin-bottom:28px">
+  <div class="notes" style="grid-template-columns:1fr">
+    {% include "banking/_note.html" with a=account href="#statement" %}
+  </div>
+  <div class="card">
+    <dl class="kv">
+      <dt>Type</dt><dd>{{ account.get_account_type_display }}</dd>
+      <dt>Status</dt><dd><span class="chip chip-{{ account.status|lower }}">{{ account.get_status_display }}</span></dd>
+      <dt>Balance</dt><dd class="num">฿{{ account.balance|money }}</dd>
+      <dt>Last change</dt><dd>{{ account.updated_at|date:"j M Y, H:i" }}</dd>
+    </dl>
+  </div>
+</div>
+
+<h2 id="statement">Passbook</h2>
+{% include "banking/_statement.html" with detail_url="banking:transaction_detail" %}
+<a class="back" href="{% url 'banking:account_list' %}">&larr; All accounts</a>
+{% endblock %}

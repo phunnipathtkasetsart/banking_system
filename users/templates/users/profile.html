@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Profile{% endblock %}
+{% block content %}
+<div class="profile-head">
+  {% if profile_user.avatar %}<img class="avatar" src="{{ profile_user.avatar.url }}" alt="">{% else %}<span class="avatar">{{ profile_user|initials }}</span>{% endif %}
+  <div><span class="source">PostgreSQL · users_user</span><h1>{{ profile_user.get_full_name|default:profile_user.username }}</h1></div>
+</div>
+<div class="card form-card">
+  <dl class="kv">
+    <dt>Username</dt><dd>{{ profile_user.username }}</dd>
+    <dt>Email</dt><dd>{{ profile_user.email }}</dd>
+    <dt>Phone</dt><dd>{{ profile_user.phone|default:"—" }}</dd>
+    <dt>Role</dt><dd>{{ profile_user.get_role_display }}</dd>
+    <dt>Member since</dt><dd>{{ profile_user.date_joined|date:"j M Y" }}</dd>
+  </dl>
+  <div class="actions" style="margin-top:18px">
+    <a class="btn btn-primary" href="{% url 'users:profile_edit' %}">Edit profile</a>
+    <a class="btn" href="{% url 'users:password_change' %}">Change password</a>
+  </div>
+</div>
+{% endblock %}

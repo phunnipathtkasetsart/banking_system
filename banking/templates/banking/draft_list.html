@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Drafts{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="source">MongoDB · transfer_drafts</span><h1>Transfer drafts</h1><p>Transfers you've prepared but not sent. Sending one removes it from this list.</p></div>
+  <a class="btn btn-primary" href="{% url 'banking:draft_create' %}">New draft</a>
+</div>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>From</th><th>To</th><th class="right">Amount ฿</th><th>Note</th><th>Last edited</th><th></th></tr></thead>
+  <tbody>
+  {% for d in drafts %}
+  <tr>
+    <td class="num">{{ d.fromAccountNumber|acct }}</td><td class="num">{{ d.toAccountNumber|acct }}</td>
+    <td class="right num"><strong>{{ d.amount|money }}</strong></td>
+    <td>{{ d.description|default:"—" }}</td><td>{{ d.updatedAt|date:"j M, H:i" }}</td>
+    <td class="right">
+      <div class="actions" style="justify-content:flex-end">
+        <form method="post" action="{% url 'banking:draft_execute' d.id %}">{% csrf_token %}<button type="submit" class="btn-sm btn-primary">Send now</button></form>
+        <a class="btn btn-sm" href="{% url 'banking:draft_edit' d.id %}">Edit</a>
+        <a class="btn btn-sm btn-ghost" href="{% url 'banking:draft_delete' d.id %}">Delete</a>
+      </div>
+    </td>
+  </tr>
+  {% empty %}
+  <tr><td colspan="6" class="empty">No drafts. On the Transfer page, choose “Save as draft” to keep one for later.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

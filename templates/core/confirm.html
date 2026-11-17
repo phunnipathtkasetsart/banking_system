@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ title }}</h1></div>
+<div class="card confirm">
+  <p>{{ message }}</p>
+  <form method="post" class="actions">
+    {% csrf_token %}
+    <button type="submit" class="btn-danger">{{ submit_label|default:"Confirm" }}</button>
+    {% if back_url %}<a class="btn btn-ghost" href="{{ back_url }}">Cancel</a>{% endif %}
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "core/_auth.html" %}
+{% block title %}Log in{% endblock %}
+{% block auth_form %}
+<h1>Log in</h1>
+<p class="lead">Use your DigiBank username and password.</p>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <input type="hidden" name="next" value="{{ next }}">
+  <button type="submit" class="btn-primary">Log in</button>
+</form>
+<p class="auth-switch">New to DigiBank? <a href="{% url 'users:register' %}">Open an account</a></p>
+{% endblock %}

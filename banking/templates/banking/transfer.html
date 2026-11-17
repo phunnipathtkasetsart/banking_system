@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Transfer{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Transfer money</h1>
+  <p>Money leaves your account and reaches theirs in a single step. If anything fails, neither balance changes.</p></div></div>
+
+<div class="grid-2">
+  <div class="card">
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <div class="actions">
+        <button type="submit" name="send" class="btn-primary">Send money</button>
+        <button type="submit" name="save_draft" class="btn-ghost">Save as draft</button>
+      </div>
+    </form>
+  </div>
+  <aside class="card">
+    <h3>Saved payees</h3>
+    <p class="muted" style="font-size:14px">Pick one to fill in the account number.</p>
+    <ul class="payees">
+      {% for b in beneficiaries %}
+        <li><a href="{% url 'banking:transfer' %}?to={{ b.account.account_number }}"><span>{{ b.nickname }}</span><span class="num">{{ b.account.account_number|acct }}</span></a></li>
+      {% empty %}
+        <li class="muted">No saved payees yet. <a href="{% url 'banking:beneficiary_create' %}">Add a payee</a></li>
+      {% endfor %}
+    </ul>
+  </aside>
+</div>
+{% endblock %}

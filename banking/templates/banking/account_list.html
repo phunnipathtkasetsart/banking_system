@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Accounts{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="source">PostgreSQL · banking_account</span><h1>Accounts</h1></div>
+  <a class="btn btn-primary" href="{% url 'banking:account_open' %}">Open an account</a>
+</div>
+<div class="notes">
+  {% for a in accounts %}
+    {% url 'banking:account_detail' a.pk as href %}
+    {% include "banking/_note.html" with a=a href=href %}
+  {% empty %}
+    <a class="note-new" href="{% url 'banking:account_open' %}">You have no accounts. Open one to start.</a>
+  {% endfor %}
+</div>
+{% endblock %}

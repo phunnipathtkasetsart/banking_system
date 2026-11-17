@@ -1,0 +1,23 @@
+{# Shared transaction ledger. Needs: transactions, detail_url (url name taking pk) #}
+<div class="passbook">
+<table>
+  <thead>
+    <tr><th>Date</th><th>Reference</th><th>Type</th><th>From → to</th><th class="right">Amount ฿</th><th>Status</th><th>Note</th></tr>
+  </thead>
+  <tbody>
+  {% for t in transactions %}
+  <tr>
+    <td>{{ t.created_at|date:"d M y H:i" }}</td>
+    <td><a href="{% url detail_url t.pk %}">{{ t.reference }}</a></td>
+    <td>{{ t.get_txn_type_display }}</td>
+    <td>{% for e in t.entries.all %}<span class="{% if e.direction == 'DEBIT' %}debit{% else %}credit{% endif %}">{{ e.account.account_number|acct }}</span>{% if not forloop.last %} → {% endif %}{% endfor %}</td>
+    <td class="right bal">{{ t.amount|money }}</td>
+    <td><span class="chip chip-{{ t.status|lower }}">{{ t.get_status_display }}</span></td>
+    <td class="desc">{{ t.description|default:"—" }}</td>
+  </tr>
+  {% empty %}
+  <tr><td colspan="7" class="empty">No transactions yet. Money you send or receive will appear here.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>

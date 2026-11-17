@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Staff dashboard{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="source">Day sheet · {% now "l j F Y" %}</span><h1>Today at the bank</h1></div>
+  <div class="actions">
+    <a class="btn btn-primary" href="{% url 'adminpanel:user_create' %}">Add a user</a>
+    <a class="btn" href="{% url 'notifications:broadcast' %}">Send a broadcast</a>
+  </div>
+</div>
+
+<div class="daysheet">
+  <section class="card">
+    <div class="sheet-head"><h3>Money &amp; accounts</h3><span class="source" style="margin:0">PostgreSQL</span></div>
+    <ul class="leaders">
+      <li><span class="lbl">Customer deposits held</span><span class="dots"></span><span class="val">฿{{ total_deposits|money }}</span></li>
+      <li><span class="lbl">Transactions today</span><span class="dots"></span><span class="val"><a href="{% url 'adminpanel:transaction_list' %}">{{ txn_today }}</a></span></li>
+      <li><span class="lbl">Value moved today</span><span class="dots"></span><span class="val">฿{{ volume_today|money }}</span></li>
+      <li><span class="lbl">Customers</span><span class="dots"></span><span class="val"><a href="{% url 'adminpanel:user_list' %}?role=CUSTOMER">{{ customers }}</a></span></li>
+      <li><span class="lbl">Accounts active</span><span class="dots"></span><span class="val">{{ accounts_by_status.ACTIVE|default:0 }}</span></li>
+      <li><span class="lbl">Accounts frozen</span><span class="dots"></span><span class="val {% if accounts_by_status.FROZEN %}alert{% endif %}"><a href="{% url 'adminpanel:account_list' %}?status=FROZEN">{{ accounts_by_status.FROZEN|default:0 }}</a></span></li>
+      <li><span class="lbl">Accounts closed</span><span class="dots"></span><span class="val">{{ accounts_by_status.CLOSED|default:0 }}</span></li>
+    </ul>
+  </section>
+  <section class="card">
+    <div class="sheet-head"><h3>Service &amp; security</h3><span class="source" style="margin:0">MongoDB</span></div>
+    <ul class="leaders">
+      <li><span class="lbl">Open support tickets</span><span class="dots"></span><span class="val {% if open_tickets %}alert{% endif %}"><a href="{% url 'support:ticket_list' %}?status=OPEN">{{ open_tickets }}</a></span></li>
+      <li><span class="lbl">Failed operations, last 24h</span><span class="dots"></span><span class="val {% if failed_24h %}alert{% endif %}"><a href="{% url 'activity:admin_list' %}?status=FAILED">{{ failed_24h }}</a></span></li>
+      {% for a in top_actions %}
+      <li><span class="lbl">{{ a.action|label }} events, 24h</span><span class="dots"></span><span class="val"><a href="{% url 'activity:admin_list' %}?action={{ a.action }}">{{ a.n }}</a></span></li>
+      {% empty %}
+      <li><span class="lbl">No activity in the last 24 hours</span></li>
+      {% endfor %}
+    </ul>
+  </section>
+</div>
+
+<div class="page-head" style="margin:40px 0 14px"><h2 style="margin:0">Latest transactions</h2><a href="{% url 'adminpanel:transaction_list' %}">All transactions &rarr;</a></div>
+{% include "banking/_txn_table.html" with transactions=recent_txns detail_url="adminpanel:transaction_detail" %}
+
+<div class="page-head" style="margin:40px 0 14px"><h2 style="margin:0">Latest activity</h2><a href="{% url 'activity:admin_list' %}">All logs &rarr;</a></div>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Time</th><th>User</th><th>Action</th><th>Result</th></tr></thead>
+  <tbody>
+  {% for l in recent_logs %}
+  <tr><td class="num">{{ l.timestamp|date:"d M H:i:s" }}</td><td>{{ l.username|default:"—" }}</td><td>{{ l.action }}</td><td><span class="chip chip-{{ l.status|lower }}">{{ l.status }}</span></td></tr>
+  {% empty %}<tr><td colspan="4" class="empty">No activity recorded yet.</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

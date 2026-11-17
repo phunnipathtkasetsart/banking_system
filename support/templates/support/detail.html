@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ ticket.subject }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="source">{{ ticket.category|title }} · opened {{ ticket.createdAt|date:"j M Y" }} by {{ ticket.username }}</span>
+    <h1>{{ ticket.subject }}</h1></div>
+  <div class="actions">
+    <span class="chip chip-{{ ticket.priority|lower }}">{{ ticket.priority }} priority</span>
+    <span class="chip chip-{{ ticket.status|lower }}">{{ ticket.status|label }}</span>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div>
+    <div class="thread">
+      {% for m in ticket.messages %}
+      <div class="bubble {% if m.isStaff %}staff{% endif %}">
+        <div class="bubble-meta"><strong>{{ m.authorName }}</strong>{% if m.isStaff %} · DigiBank staff{% endif %} · {{ m.createdAt|date:"j M, H:i" }}</div>
+        <div>{{ m.body|linebreaksbr }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% if ticket.status != "CLOSED" %}
+    <div class="card" style="margin-top:18px">
+      <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn-primary">Send reply</button>
+      </form>
+    </div>
+    {% else %}
+      <p class="muted" style="margin-top:18px">This ticket is closed. Open a new ticket if you need more help.</p>
+    {% endif %}
+  </div>
+
+  <aside class="card">
+    <h3>Ticket</h3>
+    <form method="post" action="{% url 'support:ticket_status' ticket.id %}" style="margin:14px 0">
+      {% csrf_token %}
+      {% if user.is_bank_admin %}
+        <p><label for="status">Status</label>
+        <select id="status" name="status">{% for s in statuses %}<option value="{{ s }}" {% if s == ticket.status %}selected{% endif %}>{{ s|label }}</option>{% endfor %}</select></p>
+        <button type="submit" class="btn-primary">Update status</button>
+      {% elif ticket.status != "CLOSED" %}
+        <input type="hidden" name="status" value="CLOSED"><button type="submit">Close ticket</button>
+      {% endif %}
+    </form>
+    <div class="actions">
+      {% if ticket.status != "CLOSED" %}<a class="btn btn-ghost" href="{% url 'support:ticket_edit' ticket.id %}">Edit details</a>{% endif %}
+      <a class="btn btn-ghost" href="{% url 'support:ticket_delete' ticket.id %}">Delete</a>
+    </div>
+  </aside>
+</div>
+<a class="back" href="{% url 'support:ticket_list' %}">&larr; All tickets</a>
+{% endblock %}

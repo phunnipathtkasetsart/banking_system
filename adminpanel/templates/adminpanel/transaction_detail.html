@@ -1,0 +1,12 @@
+{% extends "banking/transaction_detail.html" %}
+{% block actions %}
+<div class="actions" style="margin-top:22px">
+  {% if txn.status == "COMPLETED" and txn.txn_type != "REVERSAL" %}
+    <a class="btn btn-danger" href="{% url 'adminpanel:transaction_reverse' txn.pk %}">Reverse transaction</a>
+  {% endif %}
+  {% if txn.status == "REVERSED" %}
+    <a class="btn btn-ghost" href="{% url 'adminpanel:transaction_delete' txn.pk %}">Delete record</a>
+  {% endif %}
+  <a class="btn btn-ghost" href="{% url 'adminpanel:transaction_list' %}">&larr; All transactions</a>
+</div>
+{% endblock %}

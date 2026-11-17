@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}{{ txn.reference }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="source">{{ txn.get_txn_type_display }} · {{ txn.created_at|date:"j M Y, H:i" }}</span>
+    <h1 class="num" style="font-family:var(--f-display)">฿{{ txn.amount|money }}</h1>
+    <p class="num">{{ txn.reference }}</p></div>
+  <span class="chip chip-{{ txn.status|lower }}">{{ txn.get_status_display }}</span>
+</div>
+
+<div class="grid-2">
+  <div>
+    <h2 style="margin-top:0">Ledger lines</h2>
+    <div class="passbook">
+      <table>
+        <thead><tr><th>Line</th><th>Account</th><th class="right">Amount ฿</th><th class="right">Balance after</th></tr></thead>
+        <tbody>
+        {% for e in txn.entries.all %}
+          <tr>
+            <td><span class="chip chip-{{ e.direction|lower }}">{{ e.get_direction_display }}</span></td>
+            <td>{{ e.account.account_number|acct }}</td>
+            <td class="right {% if e.direction == 'DEBIT' %}debit{% else %}credit{% endif %}">{% if e.direction == 'DEBIT' %}−{% else %}+{% endif %}{{ e.amount|money }}</td>
+            <td class="right bal">{% if e.account.user_id == user.pk or user.is_bank_admin %}{{ e.balance_after|money }}{% else %}—{% endif %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <dl class="kv">
+      <dt>Type</dt><dd>{{ txn.get_txn_type_display }}</dd>
+      <dt>Note</dt><dd>{{ txn.description|default:"—" }}</dd>
+      <dt>Made by</dt><dd>{{ txn.created_by|default:"—" }}</dd>
+      {% if txn.reversal_of %}<dt>Reverses</dt><dd class="num">{{ txn.reversal_of.reference }}</dd>{% endif %}
+      {% if txn.reversed_by %}<dt>Reversed by</dt><dd class="num">{{ txn.reversed_by.reference }}</dd>{% endif %}
+    </dl>
+  </div>
+</div>
+
+{% block actions %}<a class="back" href="{% url 'banking:transaction_list' %}">&larr; All transactions</a>{% endblock %}
+{% endblock %}

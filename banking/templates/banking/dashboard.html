@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Overview{% endblock %}
+{% block content %}
+<section class="hero">
+  <div>
+    <div class="hero-eyebrow">Total balance · {{ accounts|length }} account{{ accounts|length|pluralize }}</div>
+    <div class="hero-total"><span class="cur">฿</span>{{ total|money_int }}<span class="dec">.{{ total|money_dec }}</span></div>
+    <p class="muted">Hello, {{ user.first_name|default:user.username }}. Here's where your money is.</p>
+  </div>
+  <div class="actions">
+    <a class="btn btn-primary" href="{% url 'banking:transfer' %}">Transfer</a>
+    <a class="btn" href="{% url 'banking:deposit' %}">Deposit</a>
+    <a class="btn" href="{% url 'banking:withdraw' %}">Withdraw</a>
+    {% if draft_count %}<a class="btn btn-ghost" href="{% url 'banking:draft_list' %}">{{ draft_count }} draft{{ draft_count|pluralize }}</a>{% endif %}
+  </div>
+</section>
+
+<div class="notes">
+  {% for a in accounts %}
+    {% url 'banking:account_detail' a.pk as href %}
+    {% include "banking/_note.html" with a=a href=href %}
+  {% endfor %}
+  <a class="note-new" href="{% url 'banking:account_open' %}">+ Open another account</a>
+</div>
+
+<div class="page-head" style="margin:40px 0 14px"><h2 style="margin:0">Recent transactions</h2>
+  <a href="{% url 'banking:transaction_list' %}">See all &rarr;</a></div>
+{% include "banking/_txn_table.html" with transactions=recent detail_url="banking:transaction_detail" %}
+{% endblock %}

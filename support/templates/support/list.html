@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Support{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="source">MongoDB · support_tickets</span><h1>{% if user.is_bank_admin %}Support desk{% else %}Support{% endif %}</h1>
+    {% if not user.is_bank_admin %}<p>Ask us about your accounts, transfers or cards. We reply here.</p>{% endif %}</div>
+  {% if not user.is_bank_admin %}<a class="btn btn-primary" href="{% url 'support:ticket_create' %}">New ticket</a>{% endif %}
+</div>
+<nav class="tabs">
+  <a href="{% url 'support:ticket_list' %}" class="{% if not request.GET.status %}is-active{% endif %}">All</a>
+  {% for s in statuses %}<a href="?status={{ s }}" class="{% if request.GET.status == s %}is-active{% endif %}">{{ s|label }}</a>{% endfor %}
+</nav>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Subject</th>{% if user.is_bank_admin %}<th>Customer</th>{% endif %}<th>Topic</th><th>Priority</th><th>Status</th><th>Updated</th></tr></thead>
+  <tbody>
+  {% for t in tickets %}
+  <tr>
+    <td><a href="{% url 'support:ticket_detail' t.id %}"><strong>{{ t.subject }}</strong></a></td>
+    {% if user.is_bank_admin %}<td>{{ t.username }}</td>{% endif %}
+    <td>{{ t.category|title }}</td>
+    <td><span class="chip chip-{{ t.priority|lower }}">{{ t.priority }}</span></td>
+    <td><span class="chip chip-{{ t.status|lower }}">{{ t.status|label }}</span></td>
+    <td class="num">{{ t.updatedAt|date:"d M H:i" }}</td>
+  </tr>
+  {% empty %}
+  <tr><td colspan="6" class="empty">{% if user.is_bank_admin %}No tickets here.{% else %}No tickets yet. <a href="{% url 'support:ticket_create' %}">Open one</a> if you need help.{% endif %}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

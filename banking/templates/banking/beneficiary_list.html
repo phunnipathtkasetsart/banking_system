@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Saved payees{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="source">PostgreSQL · banking_beneficiary</span><h1>Saved payees</h1><p>People you send money to often.</p></div>
+  <a class="btn btn-primary" href="{% url 'banking:beneficiary_create' %}">Add a payee</a>
+</div>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Name</th><th>Account</th><th>Account holder</th><th>Added</th><th></th></tr></thead>
+  <tbody>
+  {% for b in beneficiaries %}
+  <tr>
+    <td><strong>{{ b.nickname }}</strong></td><td class="num">{{ b.account.account_number|acct }}</td>
+    <td>{{ b.account.user.get_full_name|default:b.account.user.username }}</td><td>{{ b.created_at|date:"j M Y" }}</td>
+    <td class="row-actions right">
+      <a href="{% url 'banking:transfer' %}?to={{ b.account.account_number }}">Send money</a>
+      <a href="{% url 'banking:beneficiary_edit' b.pk %}">Rename</a>
+      <a href="{% url 'banking:beneficiary_delete' b.pk %}">Remove</a>
+    </td>
+  </tr>
+  {% empty %}
+  <tr><td colspan="5" class="empty">No saved payees. <a href="{% url 'banking:beneficiary_create' %}">Add one</a> to send money faster.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

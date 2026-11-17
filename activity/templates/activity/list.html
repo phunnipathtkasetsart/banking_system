@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Activity logs{% endblock %}
+{% block content %}
+<div class="page-head"><div><span class="source">MongoDB · activity_logs</span>
+  <h1>{% if admin_mode %}Activity logs{% else %}My activity{% endif %}</h1>
+  <p>{% if admin_mode %}Every sign-in, money movement and failed attempt across the bank.{% else %}Sign-ins, transfers and changes made on your login.{% endif %}</p></div></div>
+
+{% if admin_mode %}
+<form method="get" class="filters">
+  <div><label for="action">Action</label><select id="action" name="action"><option value="">Any action</option>
+    {% for a in actions %}<option value="{{ a }}" {% if filters.action == a %}selected{% endif %}>{{ a }}</option>{% endfor %}</select></div>
+  <div><label for="status">Result</label><select id="status" name="status"><option value="">Any result</option>
+    <option value="SUCCESS" {% if filters.status == "SUCCESS" %}selected{% endif %}>Success</option>
+    <option value="FAILED" {% if filters.status == "FAILED" %}selected{% endif %}>Failed</option></select></div>
+  <div><label for="username">Username</label><input id="username" name="username" value="{{ filters.username|default:'' }}"></div>
+  <div class="check"><input type="checkbox" id="unreviewed" name="unreviewed" value="1" {% if filters.unreviewed %}checked{% endif %}><label for="unreviewed">Not reviewed</label></div>
+  <button type="submit" class="btn-primary">Filter</button>
+  <a class="btn btn-ghost" href="{% url 'activity:admin_list' %}">Reset</a>
+</form>
+{% endif %}
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Time</th>{% if admin_mode %}<th>User</th>{% endif %}<th>Action</th><th>Result</th><th>Details</th><th>IP</th>
+      {% if admin_mode %}<th>Review</th><th></th>{% endif %}</tr></thead>
+  <tbody>
+  {% for l in logs %}
+  <tr>
+    <td class="num">{{ l.timestamp|date:"d M H:i:s" }}</td>
+    {% if admin_mode %}<td>{{ l.username|default:"—" }}</td>{% endif %}
+    <td><strong>{{ l.action }}</strong></td>
+    <td><span class="chip chip-{{ l.status|lower }}">{{ l.status }}</span></td>
+    <td style="font-size:13px">{% for k, v in l.metadata.items %}<span class="muted">{{ k }}</span> {{ v }}{% if not forloop.last %}<br>{% endif %}{% empty %}—{% endfor %}</td>
+    <td class="num">{{ l.ip_address|default:"—" }}</td>
+    {% if admin_mode %}
+      <td>{% if l.reviewed %}<span class="chip chip-active">Reviewed</span>{% if l.admin_note %}<br><span class="muted" style="font-size:13px">{{ l.admin_note }}</span>{% endif %}{% else %}<span class="chip">Pending</span>{% endif %}</td>
+      <td class="row-actions right"><a href="{% url 'activity:edit' l.id %}">Review</a><a href="{% url 'activity:delete' l.id %}">Delete</a></td>
+    {% endif %}
+  </tr>
+  {% empty %}
+  <tr><td colspan="8" class="empty">No activity matches these filters.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}
