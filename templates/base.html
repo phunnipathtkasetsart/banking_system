@@ -34,6 +34,11 @@
         <a class="nav-link {% active 'notifications:list' %}" href="{% url 'notifications:list' %}">Notifications</a>
         <a class="nav-link {% active 'notifications:broadcast' %}" href="{% url 'notifications:broadcast' %}">Broadcast</a>
       </div>
+      <div class="nav-group">
+        <div class="nav-label">Data</div>
+        <a class="nav-link {% active 'adminpanel:data_overview' 'adminpanel:data_sql' 'adminpanel:data_mongo' %}" href="{% url 'adminpanel:data_overview' %}">Data explorer</a>
+        <a class="nav-link {% active 'adminpanel:data_passwords' %}" href="{% url 'adminpanel:data_passwords' %}">Password storage</a>
+      </div>
     {% else %}
       <div class="nav-group">
         <div class="nav-label">Money</div>

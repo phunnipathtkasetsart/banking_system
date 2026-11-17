@@ -1,0 +1,40 @@
+{% extends "adminpanel/data/_layout.html" %}
+{% block title %}{{ name }}{% endblock %}
+{% block explorer %}
+<div class="page-head">
+  <div><span class="source">MongoDB · database digibank</span><h1 class="mono-title">{{ name }}</h1>
+    <p>{{ total }} document{{ total|pluralize }} · {{ size|filesizeformat }} · about {{ avg|filesizeformat }} each.</p></div>
+</div>
+
+<div class="grid-2" style="margin-bottom:24px">
+  <section class="card">
+    <h3>Fields seen in documents</h3>
+    <p class="muted" style="font-size:14px">No fixed schema. These are the fields found in the first 200 documents.</p>
+    <div class="table-wrap" style="box-shadow:none">
+      <table>
+        <thead><tr><th>Field</th><th>Type(s)</th></tr></thead>
+        <tbody>{% for k, t in schema %}<tr><td class="num">{{ k }}</td><td class="num muted">{{ t }}</td></tr>{% empty %}<tr><td colspan="2" class="empty">Collection is empty.</td></tr>{% endfor %}</tbody>
+      </table>
+    </div>
+  </section>
+  <section class="card">
+    <h3>Indexes</h3>
+    <ul class="constraint-list">
+      {% for n, key in indexes %}<li><span class="chip chip-admin">{{ n }}</span> <code>{{ key }}</code></li>{% endfor %}
+    </ul>
+  </section>
+</div>
+
+<form method="get" class="filters">
+  <div><label for="field">Field</label><select id="field" name="field"><option value="">Any field</option>
+    {% for f in fields %}<option value="{{ f }}" {% if f == field %}selected{% endif %}>{{ f }}</option>{% endfor %}</select></div>
+  <div><label for="value">Equals</label><input id="value" name="value" value="{{ value }}" placeholder="e.g. FAILED or 2"></div>
+  <button type="submit" class="btn-primary">Find</button>
+  {% if field %}<a class="btn btn-ghost" href="{% url 'adminpanel:data_mongo' name %}">Clear</a>{% endif %}
+</form>
+<pre class="query">db.{{ name }}.find({{ query_text }}).sort({_id: -1}).limit({{ limit }})   // {{ matched }} match{{ matched|pluralize:"es" }}</pre>
+
+<div class="docs">
+  {% for d in docs %}<pre class="doc">{{ d }}</pre>{% empty %}<p class="muted">No documents match.</p>{% endfor %}
+</div>
+{% endblock %}

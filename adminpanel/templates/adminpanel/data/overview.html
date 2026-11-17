@@ -1,0 +1,64 @@
+{% extends "adminpanel/data/_layout.html" %}
+{% block title %}Data explorer{% endblock %}
+{% block explorer %}
+<div class="page-head">
+  <div><span class="source">Read-only · both databases</span><h1>Data explorer</h1>
+    <p>Everything the app stores, exactly as the databases hold it.</p></div>
+  <a class="btn" href="{% url 'adminpanel:data_overview' %}">Refresh</a>
+</div>
+
+<div class="daysheet">
+  <section class="card">
+    <div class="sheet-head"><h3>PostgreSQL tables</h3><span class="source" style="margin:0">relational · ACID</span></div>
+    <ul class="leaders">
+      {% for t in sql %}
+      <li><a class="lbl mono" href="{% url 'adminpanel:data_sql' t.name %}">{{ t.name }}</a><span class="dots"></span><span class="val">{{ t.rows }} row{{ t.rows|pluralize }}</span></li>
+      {% endfor %}
+    </ul>
+  </section>
+  <section class="card">
+    <div class="sheet-head"><h3>MongoDB collections</h3><span class="source" style="margin:0">documents · flexible schema</span></div>
+    <ul class="leaders">
+      {% for c in mongo %}
+      <li><a class="lbl mono" href="{% url 'adminpanel:data_mongo' c.name %}">{{ c.name }}</a><span class="dots"></span><span class="val">{{ c.docs }} doc{{ c.docs|pluralize }} · {{ c.size|filesizeformat }}</span></li>
+      {% endfor %}
+    </ul>
+  </section>
+</div>
+
+<div class="page-head" style="margin:40px 0 14px">
+  <div><h2 style="margin:0">Rollback check</h2>
+  <p>Take a screenshot of this panel, run a transfer with “Simulate failure” ticked, then refresh. Balances and counts stay the same, and a new failed attempt appears on the right.</p></div>
+</div>
+<div class="grid-2">
+  <div>
+    <div class="passbook">
+      <table>
+        <thead><tr><th>Account</th><th>Holder</th><th>Status</th><th class="right">Balance ฿</th></tr></thead>
+        <tbody>
+        {% for a in snap.accounts %}
+          <tr><td>{{ a.account_number|acct }}</td><td class="desc">{{ a.user.username }}</td>
+              <td>{{ a.status|label }}</td><td class="right bal">{{ a.balance|money }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="num muted" style="margin-top:10px">banking_transaction: {{ snap.txn_count }} rows · banking_transactionentry: {{ snap.entry_count }} rows</p>
+  </div>
+  <div class="card">
+    <h3>Latest failed attempts <span class="source" style="margin:0 0 0 6px">activity_logs</span></h3>
+    <ul class="leaders">
+      {% for f in snap.failed %}
+      <li style="display:block">
+        <span class="chip chip-failed">{{ f.action }}</span>
+        <span class="num muted" style="font-size:12px">{{ f.timestamp|date:"d M H:i:s" }} · {{ f.username }}</span><br>
+        <span style="font-size:14px">{{ f.metadata.reason }}</span>
+        {% if f.metadata.rolled_back %}<span class="chip">rolled back</span>{% endif %}
+      </li>
+      {% empty %}
+      <li class="muted">No failed attempts yet.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "adminpanel/data/_layout.html" %}
+{% block title %}{{ table }}{% endblock %}
+{% block explorer %}
+<div class="page-head">
+  <div><span class="source">PostgreSQL · Django model {{ model }}</span><h1 class="mono-title">{{ table }}</h1>
+    <p>{{ total }} row{{ total|pluralize }} in total{% if rows|length < total %}, newest {{ rows|length }} shown{% endif %}.</p></div>
+</div>
+
+<div class="grid-2" style="margin-bottom:24px">
+  <section class="card">
+    <h3>Columns</h3>
+    <div class="table-wrap" style="margin-top:12px;box-shadow:none">
+      <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Null</th></tr></thead>
+        <tbody>
+        {% for c in columns %}
+          <tr><td class="num">{{ c.0 }}</td><td class="num muted">{{ c.1 }}{% if c.2 %}({{ c.2 }}){% endif %}</td><td>{{ c.3|lower }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="card">
+    <h3>Constraints</h3>
+    <ul class="constraint-list">
+      {% for name, kind, definition in constraints %}
+        <li><span class="chip {% if kind == 'Check' %}chip-frozen{% elif kind == 'Foreign key' %}chip-admin{% elif kind == 'Primary key' %}chip-active{% endif %}">{{ kind }}</span>
+            <code>{{ definition }}</code></li>
+      {% endfor %}
+    </ul>
+  </section>
+</div>
+
+<form method="get" class="filters">
+  <div><label for="q">Search any column</label><input id="q" name="q" type="search" value="{{ q }}" placeholder="e.g. alice, TRANSFER, 0161…"></div>
+  <button type="submit" class="btn-primary">Search</button>
+  {% if q %}<a class="btn btn-ghost" href="{% url 'adminpanel:data_sql' table %}">Clear</a>{% endif %}
+</form>
+<pre class="query">{{ query_text }}</pre>
+
+<div class="table-wrap raw">
+  <table>
+    <thead><tr>{% for c in col_names %}<th>{{ c }}</th>{% endfor %}</tr></thead>
+    <tbody>
+    {% for row in rows %}
+      <tr>{% for v in row %}<td>{% if v is None %}<span class="null">NULL</span>{% else %}{{ v }}{% endif %}</td>{% endfor %}</tr>
+    {% empty %}
+      <tr><td colspan="{{ col_names|length }}" class="empty">No rows match “{{ q }}”.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if table == "users_user" %}
+  <p class="muted" style="margin-top:12px">The <code>password</code> column holds a salted hash, never the password itself. <a href="{% url 'adminpanel:data_passwords' %}">See how it's built</a>.</p>
+{% endif %}
+{% endblock %}

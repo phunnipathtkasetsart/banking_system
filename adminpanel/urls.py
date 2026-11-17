@@ -1,10 +1,15 @@
 from django.urls import path
 
-from . import views
+from . import data_views, views
 
 app_name = "adminpanel"
 
 urlpatterns = [
+    # data explorer (both databases, read-only)
+    path("data/", data_views.overview, name="data_overview"),
+    path("data/sql/<str:table>/", data_views.sql_table, name="data_sql"),
+    path("data/mongo/<str:name>/", data_views.mongo_collection, name="data_mongo"),
+    path("data/passwords/", data_views.passwords, name="data_passwords"),
     path("", views.dashboard, name="dashboard"),
     # users
     path("users/", views.user_list, name="user_list"),

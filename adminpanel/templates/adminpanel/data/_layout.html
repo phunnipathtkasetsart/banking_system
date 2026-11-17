@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="explorer">
+  <nav class="explorer-nav" aria-label="Tables and collections">
+    <a class="explorer-home {% active 'adminpanel:data_overview' %}" href="{% url 'adminpanel:data_overview' %}">Overview</a>
+    <div class="explorer-db">
+      <div class="explorer-db-name"><span class="db-dot db-sql"></span>PostgreSQL</div>
+      {% for t in sql_tables %}
+        <a class="explorer-link {% if t == table %}is-active{% endif %}" href="{% url 'adminpanel:data_sql' t %}">{{ t }}</a>
+      {% endfor %}
+    </div>
+    <div class="explorer-db">
+      <div class="explorer-db-name"><span class="db-dot db-mongo"></span>MongoDB</div>
+      {% for c in collections %}
+        <a class="explorer-link {% if c == name %}is-active{% endif %}" href="{% url 'adminpanel:data_mongo' c %}">{{ c }}</a>
+      {% endfor %}
+    </div>
+    <a class="explorer-home {% active 'adminpanel:data_passwords' %}" href="{% url 'adminpanel:data_passwords' %}">Password storage</a>
+  </nav>
+  <div class="explorer-main">
+    {% block explorer %}{% endblock %}
+  </div>
+</div>
+{% endblock %}
