@@ -1,24 +1,42 @@
 # DigiBank — Hybrid SQL + NoSQL Digital Banking System
 
+A full-stack web app for a digital bank, built on a hybrid database design: **PostgreSQL** holds the money and **MongoDB** holds the flexible, high-volume data around it.
 
-Django web app for a digital bank with two roles:
+- **Customers** open accounts, deposit, withdraw and transfer money, keep saved payees and transfer drafts, read notifications, raise support tickets and review their own activity.
+- **Bank staff (admin)** see a daily dashboard, manage users and accounts (freeze, counter deposits), reverse transactions, review activity logs, answer support tickets, broadcast notifications, and inspect both databases in the built-in Data explorer.
 
-- **Customer** — open accounts, deposit / withdraw / transfer, beneficiaries, transfer drafts, notifications, support tickets, activity history.
-- **Admin (bank staff)** — dashboard, manage users & accounts (freeze/unfreeze, teller deposit/withdraw), all transactions (reverse), activity-log review, support desk, broadcast notifications.
-
-| Layer | Tech |
+| Layer | Technology |
 |---|---|
-| Web / backend | Django 5.2 (server-rendered templates) |
-| SQL | PostgreSQL 16 — money, accounts, ledger (ACID) |
-| NoSQL | MongoDB 7 (single-node replica set → multi-document transactions) |
-| Runtime | Docker Compose (`web`, `db`, `mongo`) — everything local, no external services |
-| Media | Avatars stored on local disk (`media/`) |
+| Web / backend | Django 5.2, server-rendered templates |
+| SQL database | PostgreSQL 16: users, accounts, transactions, double-entry ledger (ACID) |
+| NoSQL database | MongoDB 7, single-node replica set `rs0` (needed for multi-document transactions) |
+| Runtime | Docker Compose: `web`, `db`, `mongo`, all running locally |
+| Files | Avatars stored on the server's disk (`media/`); CSS, fonts and images served from `static/` |
 
-> MVP stage: functionality only, no styling yet.
+**Fully self-contained:** no external APIs, no CDNs, no cloud databases.
+
+---
+
+## Contents
+
+1. [Quick start](#quick-start)
+2. [Configuration](#configuration)
+3. [Architecture & diagrams](#architecture--diagrams)
+4. [Project structure](#project-structure)
+5. [Database design](#database-design)
+6. [CRUD coverage](#crud-coverage)
+7. [Transactions & rollback](#transactions--rollback)
+8. [Security](#security)
+9. [Routes (API documentation)](#routes-api-documentation)
+10. [Inspecting the data](#inspecting-the-data)
+11. [Screenshots](#screenshots)
+12. [Team](#team)
 
 ---
 
 ## Quick start
+
+Requirements: Docker Desktop (with Docker Compose v2).
 
 ```bash
 cp .env.example .env
@@ -26,72 +44,105 @@ docker compose up -d --build
 docker compose exec web python manage.py seed_demo
 ```
 
-Open http://localhost:8000
+Open **http://localhost:8000**. On start the `web` container runs `migrate` and `init_mongo` (creates the collections and indexes) automatically.
 
-| Demo login (local dev only) | Password | Role |
+| Demo login (local development only) | Password | Role |
 |---|---|---|
-| `admin` | `Admin@12345` | Admin |
-| `alice` | `Customer@123` | Customer |
-| `bob` | `Customer@123` | Customer |
-
-On start, `web` automatically runs `migrate` and `init_mongo` (creates collections + indexes).
+| `admin` | `Admin@12345` | Bank staff |
+| `alice` | `Customer@123` | Customer (฿50,000 opening deposit) |
+| `bob` | `Customer@123` | Customer (฿12,000 opening deposit) |
 
 Useful commands:
 
 ```bash
-docker compose logs -f web                       # server logs
-docker compose exec web python manage.py makemigrations
-docker compose exec web python manage.py createsuperuser
-docker compose down        # stop (keeps data)
-docker compose down -v     # stop + wipe both databases
+docker compose logs -f web                              # server logs
+docker compose exec web python manage.py makemigrations  # after changing models
+docker compose exec web python manage.py changepassword <username>
+docker compose down        # stop, keep data
+docker compose down -v     # stop and wipe both databases
 ```
 
-Connect DB tools from the host: Postgres `localhost:5433` (digibank/digibank), Mongo Compass `mongodb://localhost:27018/?directConnection=true`.
+---
+
+## Configuration
+
+All settings come from `.env` (copy it from `.env.example`). `.env` is git-ignored.
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `DJANGO_SECRET_KEY` | `change-me-dev-only` | Django signing key; change it outside local development |
+| `DJANGO_DEBUG` | `1` | `1` = debug mode (also serves uploaded media) |
+| `DJANGO_ALLOWED_HOSTS` | `*` | Comma-separated host names |
+| `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` | `digibank` | PostgreSQL database and credentials |
+| `POSTGRES_HOST` / `POSTGRES_PORT` | `db` / `5432` | PostgreSQL address inside the Docker network |
+| `MONGO_URI` | `mongodb://mongo:27017/?replicaSet=rs0` | MongoDB connection string |
+| `MONGO_DB_NAME` | `digibank` | MongoDB database name |
+
+Ports published to your machine: app `8000`, PostgreSQL `5433`, MongoDB `27018` (not the defaults, so they don't clash with locally installed databases).
+
+---
+
+## Architecture & diagrams
+
+| Diagram | File |
+|---|---|
+| System architecture | [docs/diagrams/architecture.md](docs/diagrams/architecture.md) |
+| SQL ER diagram | [docs/diagrams/er-diagram.md](docs/diagrams/er-diagram.md) |
+| NoSQL document schema | [docs/diagrams/nosql-schema.md](docs/diagrams/nosql-schema.md) |
+| Transfer workflow (transaction + rollback) | [docs/diagrams/transfer-flow.md](docs/diagrams/transfer-flow.md) |
+
+The diagrams are written in Mermaid, which GitHub renders directly. To edit one, paste its code block into https://mermaid.live.
+
+```
+Browser ──HTTP :8000──▶ Django (web)
+                         ├── Django ORM ──▶ PostgreSQL (db)     5 tables · ACID
+                         ├── PyMongo    ──▶ MongoDB (mongo)     4 collections · rs0
+                         └── media/     ──▶ avatars on local disk
+```
 
 ---
 
 ## Project structure
 
 ```
-config/          Django settings, root urls
-core/            shared: Mongo client (mongo.py), role decorators, generic form/confirm pages,
-                 management commands: init_mongo, seed_demo
-users/           SQL  · custom User (role, phone, avatar) · register/login/profile
-banking/         SQL  · Account, Transaction, TransactionEntry, Beneficiary
-                 services.py = all money movement (atomic transactions)
+config/          settings, root URL routes
+core/            shared code: Mongo client (mongo.py), role decorators, display filters
+                 (templatetags/bank.py), management commands init_mongo + seed_demo
+users/           SQL   · custom User (role, phone, avatar) · register, login, profile
+banking/         SQL   · Account, Transaction, TransactionEntry, Beneficiary
+                 services.py = every money movement (atomic transactions)
                  Mongo · transfer_drafts
-activity/        Mongo · activity_logs (auto audit trail + login signals)
+activity/        Mongo · activity_logs (audit trail, login/logout signals)
 notifications/   Mongo · notifications (+ admin broadcast)
-support/         Mongo · support_tickets (embedded message thread)
-adminpanel/      admin dashboard + user/account/transaction management
-templates/       base.html, core/form.html, core/confirm.html
-docs/            diagrams/ and screenshots/ (deliverables)
+support/         Mongo · support_tickets (embedded reply thread)
+adminpanel/      staff dashboard, user/account/transaction management, data explorer
+templates/       base layout, shared form/confirm/auth pages
+static/          app.css, self-hosted fonts, guilloche pattern
+docs/            diagrams/ and screenshots/
 ```
-
-Suggested team split: one owner per app (`users`+`core`, `banking`, `adminpanel`, `activity`+`notifications`+`support`).
 
 ---
 
 ## Database design
 
-### SQL (PostgreSQL) — 5 tables
+### SQL: PostgreSQL (5 tables)
 
 | Table | Key columns | Constraints |
 |---|---|---|
-| `users_user` | id PK, username, email, role, phone, avatar | email UNIQUE |
-| `banking_account` | id PK, user_id FK→user, account_number, account_type, nickname, balance, status | account_number UNIQUE, **CHECK balance ≥ 0** |
-| `banking_transaction` | id PK, reference, txn_type, amount, status, description, created_by FK→user, reversal_of FK→self | reference UNIQUE, CHECK amount > 0 |
-| `banking_transactionentry` | id PK, transaction_id FK, account_id FK (PROTECT), direction DEBIT/CREDIT, amount, balance_after | double-entry ledger lines |
-| `banking_beneficiary` | id PK, user_id FK, account_id FK, nickname | UNIQUE(user, account) |
+| `users_user` | id, username, email, password (hash), role, phone, avatar | username UNIQUE, email UNIQUE |
+| `banking_account` | id, user_id → users_user, account_number, account_type, nickname, balance, status | account_number UNIQUE, **CHECK balance ≥ 0** |
+| `banking_transaction` | id, reference, txn_type, amount, status, description, created_by_id → users_user, reversal_of_id → self | reference UNIQUE, CHECK amount > 0 |
+| `banking_transactionentry` | id, transaction_id → banking_transaction, account_id → banking_account, direction, amount, balance_after | double-entry ledger lines; account FK is PROTECT |
+| `banking_beneficiary` | id, user_id → users_user, account_id → banking_account, nickname | UNIQUE(user, account) |
 
-### NoSQL (MongoDB) — 4 collections
+### NoSQL: MongoDB (4 collections)
 
-| Collection | Document fields |
-|---|---|
-| `activity_logs` | userId, username, action, status, ip_address, user_agent, metadata{}, reviewed, admin_note, timestamp |
-| `notifications` | userId, title, message, category, isRead, sentAt, readAt |
-| `support_tickets` | userId, username, subject, category, priority, status, messages[{authorId, authorName, isStaff, body, createdAt}], createdAt, updatedAt |
-| `transfer_drafts` | userId, fromAccountId, fromAccountNumber, toAccountNumber, amount, description, createdAt, updatedAt |
+| Collection | Document fields | Why a document store |
+|---|---|---|
+| `activity_logs` | userId, username, action, status, ip_address, user_agent, metadata{}, reviewed, admin_note, timestamp | High write volume; `metadata` has a different shape per action |
+| `notifications` | userId, title, message, category, isRead, sentAt, readAt | Simple per-user feed, written in bulk by broadcasts |
+| `support_tickets` | userId, username, subject, category, priority, status, messages[ ], createdAt, updatedAt | The reply thread is embedded and grows with `$push` |
+| `transfer_drafts` | userId, fromAccountId, fromAccountNumber, toAccountNumber, amount, description, createdAt, updatedAt | Temporary data, deleted when sent (like a shopping cart) |
 
 ---
 
@@ -99,43 +150,147 @@ Suggested team split: one owner per app (`users`+`core`, `banking`, `adminpanel`
 
 | Entity | Create | Read | Update | Delete |
 |---|---|---|---|---|
-| User (SQL) | register / admin create | profile, admin list+detail | profile edit, password, admin edit, activate/deactivate | admin delete (blocked by FK if history) |
-| Account (SQL) | customer open / admin open for user | dashboard, statement | nickname, admin status (freeze) & type | close (CLOSED if history, hard delete if empty) |
-| Transaction + Entries (SQL) | deposit, withdraw, transfer | lists, detail, statement | admin **reverse** (status → REVERSED) | admin delete reversed record |
-| Beneficiary (SQL) | add | list | rename | remove |
-| transfer_drafts (Mongo) | save draft | list | edit | delete / executed → removed |
-| notifications (Mongo) | system events, admin broadcast | list (unread filter) | mark read / all read | dismiss / clear read |
-| activity_logs (Mongo) | automatic | my activity, admin filters | admin review + note | admin delete |
-| support_tickets (Mongo) | open ticket | list, thread | reply ($push), edit, status | delete |
+| User (SQL) | register, admin create | profile, admin list + detail | profile edit, password change, admin edit, activate/deactivate | admin delete (blocked by FK if the user has history) |
+| Account (SQL) | customer opens, admin opens for a user | overview, passbook statement | rename, admin type/status (freeze) | close: marked CLOSED if it has history, deleted if empty |
+| Transaction + entries (SQL) | deposit, withdraw, transfer, counter deposit | lists, receipt, statement | admin reversal (status → REVERSED) | admin deletes a reversed record |
+| Beneficiary (SQL) | add payee | list | rename | remove |
+| transfer_drafts (Mongo) | save draft | list | edit | delete, or removed automatically when sent |
+| notifications (Mongo) | system events, admin broadcast | list, unread filter | mark read, mark all read | dismiss, clear read |
+| activity_logs (Mongo) | automatic on every action | my activity, admin filters | admin review + note | admin delete |
+| support_tickets (Mongo) | open ticket | list, thread | reply (`$push`), edit, status | delete |
 
 ---
 
 ## Transactions & rollback
 
-All money movement lives in [`banking/services.py`](banking/services.py).
+All money movement is in [banking/services.py](banking/services.py). See the [transfer workflow diagram](docs/diagrams/transfer-flow.md).
 
-**Transfer (PostgreSQL ACID transaction)**
-1. `SELECT … FOR UPDATE` both accounts (locked in pk order → no deadlocks)
-2. Validate ownership, both accounts ACTIVE, sufficient balance
-3. Debit sender, credit receiver
-4. Insert `Transaction` header + 2 `TransactionEntry` rows
-5. Any error → **ROLLBACK** of every step (also enforced by `CHECK balance >= 0`)
+**Phase 1: one PostgreSQL transaction** (`transaction.atomic`)
+1. `SELECT … FOR UPDATE` on both accounts, locked in id order to avoid deadlocks
+2. Check ownership, that both accounts are ACTIVE, and that the balance covers the amount
+3. Debit the sender, credit the receiver
+4. Insert the `banking_transaction` row and two `banking_transactionentry` rows (DEBIT + CREDIT)
+5. Any error rolls back **every** step. The database also enforces `CHECK balance >= 0`.
 
-**Cross-database sync (MongoDB multi-document transaction, after SQL commit)**
-- insert activity log, insert notifications for sender + receiver, delete the executed draft — all-or-nothing.
+**Phase 2: cross-database sync** (one MongoDB multi-document transaction, only after the SQL commit)
+- insert the activity log, insert notifications for sender and receiver, delete the draft that was sent: all or nothing.
 
-**Failure is visible:** failed attempts are written to `activity_logs` with `status=FAILED`, `rolled_back=true`, and a reason.
+**Failures are recorded:** a failed attempt writes an `activity_logs` document with `status: "FAILED"`, `rolled_back: true` and the reason.
 
-**Demo the rollback:** on the Transfer page tick **"Simulate failure (demo)"** — the app debits and credits, then crashes on purpose; balances and transaction count stay unchanged, and the failure shows in *Admin → Activity logs → status FAILED*. Other natural failures: insufficient funds, transfer to a frozen account, reversal when receiver already spent the money.
+**Demonstrating a rollback:** on the Transfer page, tick **Simulate failure (demo)**. The app debits and credits, then raises an error on purpose. Balances and the transaction count don't change. Compare before and after in *Admin → Data explorer → Rollback check*. Other real failures: insufficient funds, transfer to a frozen account, reversing money the receiver has already spent.
 
-Other atomic workflows: registration (user + default account), deposit, withdraw, admin reversal.
+Other atomic workflows: registration (user + first account), deposit, withdrawal, admin reversal, account closing.
+
+---
+
+## Security
+
+- **Passwords** are stored as salted PBKDF2-SHA256 hashes (Django's default), never as plain text. *Admin → Password storage* breaks a stored hash into algorithm, iterations, salt and hash.
+- **Role checks** on every view: customers can't open admin pages (403), staff are redirected away from customer pages, and customers can only see their own accounts, drafts, tickets and notifications (others return 404).
+- **CSRF protection** on every form; every state-changing action uses POST.
+- **SQL safety:** the ORM and parameterised queries throughout. The Data explorer only reads tables and collections on a fixed whitelist.
+- **Secrets** live in `.env`, which is git-ignored.
+
+---
+
+## Routes (API documentation)
+
+The app is server-rendered, so its interface is the set of URL routes below. `GET` shows a page; `POST` submits it. Mongo IDs are 24-character ObjectId strings.
+
+### Public and account
+
+| Route | Methods | Who | Purpose |
+|---|---|---|---|
+| `/` | GET | any | Redirects to the right home page for the role |
+| `/users/register/` | GET, POST | signed out | Create a customer + first savings account |
+| `/users/login/` · `/users/logout/` | GET, POST · POST | any | Sign in · sign out |
+| `/users/profile/` | GET | signed in | View profile |
+| `/users/profile/edit/` | GET, POST | signed in | Edit name, email, phone, avatar |
+| `/users/profile/password/` | GET, POST | signed in | Change password |
+
+### Customer banking (`/bank/`)
+
+| Route | Methods | Database | Purpose |
+|---|---|---|---|
+| `/bank/` | GET | SQL + Mongo | Overview: total balance, accounts, recent transactions |
+| `/bank/accounts/` · `/bank/accounts/open/` | GET · GET, POST | SQL | List accounts · open an account |
+| `/bank/accounts/<id>/` | GET | SQL | Account passbook |
+| `/bank/accounts/<id>/edit/` · `/close/` | GET, POST | SQL | Rename · close |
+| `/bank/deposit/` · `/bank/withdraw/` | GET, POST | SQL → Mongo | Atomic deposit · withdrawal |
+| `/bank/transfer/` | GET, POST | SQL → Mongo | Atomic transfer, or save as draft |
+| `/bank/transactions/` · `/<id>/` | GET | SQL | History · receipt with ledger lines |
+| `/bank/beneficiaries/` · `/add/` · `/<id>/edit/` · `/<id>/delete/` | GET, POST | SQL | Saved payees CRUD |
+| `/bank/drafts/` · `/new/` · `/<oid>/edit/` · `/<oid>/delete/` | GET, POST | Mongo | Transfer drafts CRUD |
+| `/bank/drafts/<oid>/execute/` | POST | SQL → Mongo | Send a draft as a real transfer |
+
+### Notifications, activity, support
+
+| Route | Methods | Who | Purpose |
+|---|---|---|---|
+| `/notifications/` | GET | signed in | Own notifications (staff: all); `?unread=1` |
+| `/notifications/<oid>/read/` · `/delete/` | POST | signed in | Mark read · dismiss |
+| `/notifications/read-all/` · `/clear/` | POST | customer | Mark all read · clear read ones |
+| `/notifications/broadcast/` | GET, POST | staff | Send to one user or all customers |
+| `/activity/` | GET | signed in | Own activity log |
+| `/activity/all/` | GET | staff | All logs; filters `action`, `status`, `username`, `unreviewed` |
+| `/activity/<oid>/edit/` · `/delete/` | GET, POST | staff | Review with note · delete |
+| `/support/` · `/support/new/` | GET · GET, POST | signed in · customer | Ticket list (`?status=`) · new ticket |
+| `/support/<oid>/` | GET, POST | owner, staff | Thread and reply |
+| `/support/<oid>/edit/` · `/status/` · `/delete/` | GET, POST · POST · GET, POST | owner, staff | Edit · change status · delete |
+
+### Staff back office (`/admin-panel/`)
+
+| Route | Methods | Purpose |
+|---|---|---|
+| `/admin-panel/` | GET | Day sheet: SQL + Mongo figures, latest transactions and activity |
+| `/admin-panel/users/` · `/new/` | GET · GET, POST | List and search users · create user |
+| `/admin-panel/users/<id>/` · `/edit/` · `/toggle-active/` · `/delete/` | GET · GET, POST · POST · GET, POST | User detail · edit · activate/deactivate · delete |
+| `/admin-panel/users/<id>/accounts/new/` | GET, POST | Open an account for a user |
+| `/admin-panel/accounts/` · `/<id>/` | GET · GET, POST | All accounts · detail + counter deposit/withdrawal |
+| `/admin-panel/accounts/<id>/edit/` · `/delete/` | GET, POST | Change type/status (freeze) · close |
+| `/admin-panel/transactions/` · `/<id>/` | GET | All transactions (filters) · detail |
+| `/admin-panel/transactions/<id>/reverse/` · `/delete/` | GET, POST | Atomic reversal · delete a reversed record |
+| `/admin-panel/data/` | GET | Data explorer overview + rollback check |
+| `/admin-panel/data/sql/<table>/` | GET | Columns, constraints and raw rows; `?q=` search |
+| `/admin-panel/data/mongo/<collection>/` | GET | Fields, indexes and raw documents; `?field=&value=` |
+| `/admin-panel/data/passwords/` | GET, POST | How passwords are hashed, with a try-it form |
+| `/django-admin/` | GET, POST | Django's built-in admin (superuser) |
+
+---
+
+## Inspecting the data
+
+- **In the app:** sign in as `admin` → **Data explorer**. It shows every table and collection as stored, with a before/after rollback check.
+- **Command line:**
+  ```bash
+  docker compose exec db psql -U digibank -d digibank
+  docker compose exec mongo mongosh digibank
+  ```
+- **Desktop tools:** pgAdmin or DBeaver → `localhost:5433` (digibank / digibank); MongoDB Compass → `mongodb://localhost:27018/?directConnection=true`.
+
+---
+
+## Screenshots
+
+Screenshots live in [docs/screenshots/](docs/screenshots/). [SHOTLIST.md](docs/screenshots/SHOTLIST.md) lists every one: SQL features, NoSQL features, transaction and rollback proof, and documentation.
+
+---
+
+## Team
+
+| Member | Student ID | Responsibility |
+|---|---|---|
+| _name_ | _id_ | `users` + `core` |
+| _name_ | _id_ | `banking` (transactions) |
+| _name_ | _id_ | `adminpanel` + data explorer |
+| _name_ | _id_ | `activity`, `notifications`, `support` |
 
 ---
 
 ## Deliverables checklist
 
-- [x] Source code, Docker setup, README
-- [ ] `docs/diagrams/` — system architecture, SQL ER diagram, NoSQL schema diagram
-- [ ] `docs/screenshots/` — CRUD screens, transaction success, rollback proof (DB before/after)
-- [ ] UI styling
-- [ ] Presentation video (≤ 12 min) + slides (≤ 10 pages) — due 23 Nov
+- [x] Source code, Docker setup, README with setup, configuration and route documentation
+- [x] System architecture, SQL ER and NoSQL schema diagrams (`docs/diagrams/`)
+- [ ] Screenshots (`docs/screenshots/`, following SHOTLIST.md)
+- [ ] Presentation slides (≤ 10 pages)
+- [ ] Presentation video (~10 min, ≤ 12 min), due 23 Nov
