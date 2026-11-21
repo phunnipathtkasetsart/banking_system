@@ -87,10 +87,10 @@ docker compose exec db psql -U digibank -d digibank -c "SELECT account_number, b
 
 | ✓ | File | Source |
 |---|---|---|
-| ☐ | `45-doc-architecture.png` | `docs/diagrams/architecture.md` rendered on GitHub |
-| ☐ | `46-doc-er-diagram.png` | `docs/diagrams/er-diagram.md` |
-| ☐ | `47-doc-nosql-schema.png` | `docs/diagrams/nosql-schema.md` |
-| ☐ | `48-doc-transfer-flow.png` | `docs/diagrams/transfer-flow.md` |
+| ☐ | `45-doc-architecture.png` | Copy of `docs/diagrams/architecture.png` |
+| ☐ | `46-doc-er-diagram.png` | Copy of `docs/diagrams/er-diagram.png` |
+| ☐ | `47-doc-nosql-schema.png` | Copy of `docs/diagrams/nosql-schema.png` |
+| ☐ | `48-doc-transfer-flow.png` | Copy of `docs/diagrams/transfer-flow.png` |
 | ☐ | `49-doc-data-explorer.png` | Admin → Data explorer → `users_user` (columns, constraints, raw rows) |
 | ☐ | `50-doc-password-storage.png` | Admin → Password storage, after **Hash it twice** with a made-up value |
 | ☐ | `51-doc-mobile.png` | Any customer page with the browser narrowed to phone width (optional) |
