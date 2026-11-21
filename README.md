@@ -84,20 +84,21 @@ Ports published to your machine: app `8000`, PostgreSQL `5433`, MongoDB `27018` 
 
 ## Architecture & diagrams
 
-| Diagram | File |
-|---|---|
-| System architecture | [docs/diagrams/architecture.md](docs/diagrams/architecture.md) |
-| SQL ER diagram | [docs/diagrams/er-diagram.md](docs/diagrams/er-diagram.md) |
-| NoSQL document schema | [docs/diagrams/nosql-schema.md](docs/diagrams/nosql-schema.md) |
-| Transfer workflow (transaction + rollback) | [docs/diagrams/transfer-flow.md](docs/diagrams/transfer-flow.md) |
+![DigiBank system architecture](docs/diagrams/architecture.png)
 
-The diagrams are written in Mermaid, which GitHub renders directly. To edit one, paste its code block into https://mermaid.live.
+The browser talks only to the Django container. Django reaches PostgreSQL through the ORM and MongoDB through PyMongo, all inside one Docker Compose network. Every money movement goes through the transaction engine (`banking/services.py`): phase 1 in PostgreSQL, then phase 2 in MongoDB.
 
-```
-Browser ──HTTP :8000──▶ Django (web)
-                         ├── Django ORM ──▶ PostgreSQL (db)     5 tables · ACID
-                         ├── PyMongo    ──▶ MongoDB (mongo)     4 collections · rs0
-                         └── media/     ──▶ avatars on local disk
+| Diagram | Source (Mermaid) | Image |
+|---|---|---|
+| System architecture | [architecture.md](docs/diagrams/architecture.md) | [architecture.png](docs/diagrams/architecture.png) |
+| SQL ER diagram | [er-diagram.md](docs/diagrams/er-diagram.md) | [er-diagram.png](docs/diagrams/er-diagram.png) |
+| NoSQL document schema | [nosql-schema.md](docs/diagrams/nosql-schema.md) | [nosql-schema.png](docs/diagrams/nosql-schema.png) |
+| Transfer workflow (transaction + rollback) | [transfer-flow.md](docs/diagrams/transfer-flow.md) | [transfer-flow.png](docs/diagrams/transfer-flow.png) |
+
+The `.md` files are the source of truth. To change a diagram, edit its Mermaid block (try it at https://mermaid.live), then regenerate the PNGs from the project folder (PowerShell):
+
+```powershell
+foreach ($f in "architecture","er-diagram","nosql-schema","transfer-flow") { npx -y @mermaid-js/mermaid-cli -i "docs/diagrams/$f.md" -o "docs/diagrams/$f.png" -s 2 -b white; Move-Item -Force "docs/diagrams/$f-1.png" "docs/diagrams/$f.png" }
 ```
 
 ---
@@ -127,6 +128,8 @@ docs/            diagrams/ and screenshots/
 
 ### SQL: PostgreSQL (5 tables)
 
+![SQL ER diagram](docs/diagrams/er-diagram.png)
+
 | Table | Key columns | Constraints |
 |---|---|---|
 | `users_user` | id, username, email, password (hash), role, phone, avatar | username UNIQUE, email UNIQUE |
@@ -136,6 +139,10 @@ docs/            diagrams/ and screenshots/
 | `banking_beneficiary` | id, user_id → users_user, account_id → banking_account, nickname | UNIQUE(user, account) |
 
 ### NoSQL: MongoDB (4 collections)
+
+![NoSQL document schema](docs/diagrams/nosql-schema.png)
+
+Dotted lines are references to SQL rows by id. MongoDB doesn't enforce them; the app keeps them consistent.
 
 | Collection | Document fields | Why a document store |
 |---|---|---|
@@ -163,7 +170,9 @@ docs/            diagrams/ and screenshots/
 
 ## Transactions & rollback
 
-All money movement is in [banking/services.py](banking/services.py). See the [transfer workflow diagram](docs/diagrams/transfer-flow.md).
+All money movement is in [banking/services.py](banking/services.py).
+
+![Transfer workflow](docs/diagrams/transfer-flow.png)
 
 **Phase 1: one PostgreSQL transaction** (`transaction.atomic`)
 1. `SELECT … FOR UPDATE` on both accounts, locked in id order to avoid deadlocks
@@ -290,7 +299,7 @@ Screenshots live in [docs/screenshots/](docs/screenshots/). [SHOTLIST.md](docs/s
 ## Deliverables checklist
 
 - [x] Source code, Docker setup, README with setup, configuration and route documentation
-- [x] System architecture, SQL ER and NoSQL schema diagrams (`docs/diagrams/`)
+- [x] System architecture, SQL ER and NoSQL schema diagrams, Mermaid sources + PNGs (`docs/diagrams/`)
 - [ ] Screenshots (`docs/screenshots/`, following SHOTLIST.md)
 - [ ] Presentation slides (≤ 10 pages)
 - [ ] Presentation video (~10 min, ≤ 12 min), due 23 Nov
