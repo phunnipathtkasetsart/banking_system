@@ -281,7 +281,19 @@ The app is server-rendered, so its interface is the set of URL routes below. `GE
 
 ## Screenshots
 
-Screenshots live in [docs/screenshots/](docs/screenshots/). [SHOTLIST.md](docs/screenshots/SHOTLIST.md) lists every one: SQL features, NoSQL features, transaction and rollback proof, and documentation.
+21 screenshots of the running app are in [docs/screenshots/](docs/screenshots/README.md). That page shows every image with a note on which table or collection it uses.
+
+| Folder | Screenshots | Shows |
+|---|---|---|
+| [01-sql-postgresql](docs/screenshots/01-sql-postgresql/) | 10 | Registration, login, account overview, profile edit, transaction history, closing an account (rejected and successful), freezing an account, staff dashboard |
+| [02-nosql-mongodb](docs/screenshots/02-nosql-mongodb/) | 6 | Transfer drafts, a new support ticket, activity logs, notifications, staff broadcast |
+| [03-transaction-proof](docs/screenshots/03-transaction-proof/) | 5 | Deposit, withdrawal and transfer receipts with their ledger lines, a simulated failure, and the rollback check in the Data explorer |
+
+**Rollback proof:** the transfer is forced to fail after the debit and credit, and the Data explorer then shows the balances unchanged and the failed attempt recorded with `rolled_back: true`.
+
+| Failed transfer | Database after the failure |
+|---|---|
+| [![Simulated transfer failure](docs/screenshots/03-transaction-proof/04-simulate-failure.png)](docs/screenshots/03-transaction-proof/04-simulate-failure.png) | [![Rollback check in the Data explorer](docs/screenshots/03-transaction-proof/05-transaction-rollback-proof.png)](docs/screenshots/03-transaction-proof/05-transaction-rollback-proof.png) |
 
 ---
 
@@ -293,13 +305,3 @@ Screenshots live in [docs/screenshots/](docs/screenshots/). [SHOTLIST.md](docs/s
 | _name_ | _id_ | `banking` (transactions) |
 | _name_ | _id_ | `adminpanel` + data explorer |
 | _name_ | _id_ | `activity`, `notifications`, `support` |
-
----
-
-## Deliverables checklist
-
-- [x] Source code, Docker setup, README with setup, configuration and route documentation
-- [x] System architecture, SQL ER and NoSQL schema diagrams, Mermaid sources + PNGs (`docs/diagrams/`)
-- [ ] Screenshots (`docs/screenshots/`, following SHOTLIST.md)
-- [ ] Presentation slides (≤ 10 pages)
-- [ ] Presentation video (~10 min, ≤ 12 min), due 23 Nov
