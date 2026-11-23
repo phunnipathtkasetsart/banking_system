@@ -299,9 +299,10 @@ The app is server-rendered, so its interface is the set of URL routes below. `GE
 
 ## Team
 
-| Member | Student ID | Responsibility |
-|---|---|---|
-| _name_ | _id_ | `users` + `core` |
-| _name_ | _id_ | `banking` (transactions) |
-| _name_ | _id_ | `adminpanel` + data explorer |
-| _name_ | _id_ | `activity`, `notifications`, `support` |
+| Member | Student ID |
+|---|---|
+| Chayapol Kaewsakul | 6810545557 |
+| Techasit Suchataunthon | 6810545590 |
+| Suppamok Tosranon | 6810545921 |
+| Suwat Teiwasuculmetri | 6810545956 |
+| Apichai Pattanakamolkul | 6810545972 |
