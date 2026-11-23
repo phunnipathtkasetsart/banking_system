@@ -17,20 +17,31 @@ A full-stack web app for a digital bank, built on a hybrid database design: **Po
 
 ---
 
+## Presentation video
+
+[![Watch the DigiBank presentation](https://img.youtube.com/vi/LNgHOB2VxnU/maxresdefault.jpg)](https://www.youtube.com/watch?v=LNgHOB2VxnU)
+
+**Watch on YouTube:** https://www.youtube.com/watch?v=LNgHOB2VxnU (about 10 minutes)
+
+The video explains the problem and our solution, describes databases, SQL and NoSQL, and demonstrates the app, including a transaction rollback.
+
+---
+
 ## Contents
 
-1. [Quick start](#quick-start)
-2. [Configuration](#configuration)
-3. [Architecture & diagrams](#architecture--diagrams)
-4. [Project structure](#project-structure)
-5. [Database design](#database-design)
-6. [CRUD coverage](#crud-coverage)
-7. [Transactions & rollback](#transactions--rollback)
-8. [Security](#security)
-9. [Routes (API documentation)](#routes-api-documentation)
-10. [Inspecting the data](#inspecting-the-data)
-11. [Screenshots](#screenshots)
-12. [Team](#team)
+1. [Presentation video](#presentation-video)
+2. [Quick start](#quick-start)
+3. [Configuration](#configuration)
+4. [Architecture & diagrams](#architecture--diagrams)
+5. [Project structure](#project-structure)
+6. [Database design](#database-design)
+7. [CRUD coverage](#crud-coverage)
+8. [Transactions & rollback](#transactions--rollback)
+9. [Security](#security)
+10. [Routes (API documentation)](#routes-api-documentation)
+11. [Inspecting the data](#inspecting-the-data)
+12. [Screenshots](#screenshots)
+13. [Team](#team)
 
 ---
 
